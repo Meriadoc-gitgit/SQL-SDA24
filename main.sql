@@ -40,11 +40,13 @@ where
 	and co.country_id = ci.country_id and co.country = 'Canada';
 
 # 8 -- Quelles sont les ventes de chaque magasin pour chaque mois de 2005 (CONCAT)
-select s.store_id, count(p.payment_id), month(p.payment_date)
+select s.store_id, count(p.payment_id), concat('0',month(p.payment_date),'-',year(p.payment_date))
 from sakila.payment p, sakila.staff st, sakila.store s
-where p.staff_id = st.staff_id and st.store_id = s.store_id
-group by month(p.payment_date), s.store_id
-order by month(p.payment_date) asc;
+where 
+	p.staff_id = st.staff_id and st.store_id = s.store_id
+	and year(p.payment_date) = 2005
+group by concat('0',month(p.payment_date),'-',year(p.payment_date)), s.store_id
+order by concat('0',month(p.payment_date),'-',year(p.payment_date)) asc;
 
-
-
+# 9 -- Trouvez le titre du film, le nom du client, le numéro de téléphone du client et l'adresse du client pour tous les DVD en circulation (qui n'ont pas prévu d'être rendus)
+select * from sakila.rental where return_date is null

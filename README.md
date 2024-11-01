@@ -63,10 +63,15 @@ where
 ```
 ![](res/Q7.png)
 
-8. 
+8. Quelles sont les ventes de chaque magasin pour chaque mois de 2005 (CONCAT)
 ```sql
-select count(payment_id), month(payment_date) 
-from sakila.payment 
-group by month(payment_date) 
-order by month(payment_date) asc;
+select s.store_id, count(p.payment_id), concat('0',month(p.payment_date),'-',year(p.payment_date))
+from sakila.payment p, sakila.staff st, sakila.store s
+where 
+	p.staff_id = st.staff_id and st.store_id = s.store_id
+	and year(p.payment_date) = 2005
+group by concat('0',month(p.payment_date),'-',year(p.payment_date)), s.store_id
+order by concat('0',month(p.payment_date),'-',year(p.payment_date)) asc;
 ```
+![](res/Q8.png)
+
