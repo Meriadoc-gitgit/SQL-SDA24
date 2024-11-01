@@ -65,13 +65,33 @@ where
 
 8. Quelles sont les ventes de chaque magasin pour chaque mois de 2005 (CONCAT)
 ```sql
-select s.store_id, count(p.payment_id), concat('0',month(p.payment_date),'-',year(p.payment_date))
+select s.store_id, count(p.payment_id) as number_sold, concat('0',month(p.payment_date),'-',year(p.payment_date)) as month_year
 from sakila.payment p, sakila.staff st, sakila.store s
 where 
-	p.staff_id = st.staff_id and st.store_id = s.store_id
+	p.staff_id = st.staff_id 
+    and st.store_id = s.store_id
 	and year(p.payment_date) = 2005
 group by concat('0',month(p.payment_date),'-',year(p.payment_date)), s.store_id
 order by concat('0',month(p.payment_date),'-',year(p.payment_date)) asc;
 ```
 ![](res/Q8.png)
 
+9. Trouvez le titre du film, le nom du client, le numéro de téléphone du client et l'adresse du client pour tous les DVD en circulation (qui n'ont pas prévu d'être rendus)
+```sql
+select distinct f.title, concat(c.first_name, ' ', c.last_name) as name, a.phone, concat(a.address, ' ', a.district, ' ', a.postal_code, ' ', ci.city, ' ', co.country) as address
+from sakila.rental r
+	join sakila.customer c 
+		on r.customer_id = c.customer_id
+	join sakila.address a
+		on a.address_id = c.address_id
+	join sakila.inventory i
+		on i.inventory_id = r.inventory_id
+	join sakila.film f
+		on f.film_id = i.film_id
+	join sakila.city ci 
+		on ci.city_id = a.city_id
+	join sakila.country co
+		on co.country_id = ci.country_id
+where r.return_date is null;
+```
+![](res/Q9.png)
