@@ -1,4 +1,112 @@
-# SQL - SDA 2024
+# SQL-SDA24
+ 
+## 1ère partie -- Base de données Sakila
+
+1. Tous les acteurs dont le nom de famille contient les lettres 'gen'
+```sql
+select * from sakila.actor
+where lower(last_name) like '%gen%';
+```
+<img src="res/Q1.png" alt="description" width="50%">
+
+
+
+2. Tous les acteurs dont le nom de famille contient les lettres 'li'
+```sql
+select * from sakila.actor
+where lower(last_name) like '%li%';
+```
+<img src="res/Q2.png" alt="description" width="50%">
+
+
+3. Liste des noms de famille de tous les acteurs, ainsi que le nombre d'acteurs portant chaque nom de famille
+```sql
+select last_name, count(*)
+from sakila.actor
+group by last_name;
+```
+<img src="res/Q3.png" alt="description" width="50%">
+
+
+4. Liste des noms de famille des acteurs et le nombre d'acteurs qui portent chaque nom de famille, mais seulement pour les noms qui sont portés par au moins 2 acteurs
+```sql
+select last_name, count(*)
+from sakila.actor
+group by last_name 
+having count(*) >= 2;
+```
+<img src="res/Q4.png" alt="description" width="50%">
+
+
+5. Utilisez JOIN pour afficher le montant total perçu par chaque membre du personnel en août 2005
+```sql
+select p.staff_id, s.first_name, s.last_name, sum(p.amount)
+from sakila.staff s join sakila.payment p on s.staff_id = p.staff_id
+where date_format(p.payment_date, '%Y-%m') = '2005-08'
+group by p.staff_id, s.first_name, s.last_name;
+```
+<img src="res/Q5.png" alt="description" width="50%">
+
+
+6. Afficher les titres des films commençant par les lettres K et Q dont la langue est l'anglais
+```sql
+select distinct f.title
+from sakila.film f, sakila.language l
+where 
+	lower(f.title) like 'k%' or lower(f.title) like 'q%'
+	and f.language_id = l.language_id and l.name = 'English';
+```
+<img src="res/Q6.png" alt="description" width="50%">
+
+
+7. Affichez les noms et les adresses électroniques de tous les clients canadiens
+```sql
+select c.last_name, c.email, c.email, a.address, a.district, ci.city, a.postal_code, co.country 
+from sakila.customer c, sakila.city ci, sakila.address a, sakila.country co
+where 
+	c.address_id = a.address_id and ci.city_id = a.city_id 
+	and co.country_id = ci.country_id and co.country = 'Canada';
+```
+<img src="res/Q7.png" alt="description" width="50%">
+
+
+8. Quelles sont les ventes de chaque magasin pour chaque mois de 2005 (CONCAT)
+```sql
+select s.store_id, count(p.payment_id) as number_sold, concat('0',month(p.payment_date),'-',year(p.payment_date)) as month_year
+from sakila.payment p, sakila.staff st, sakila.store s
+where 
+	p.staff_id = st.staff_id 
+    and st.store_id = s.store_id
+	and year(p.payment_date) = 2005
+group by concat('0',month(p.payment_date),'-',year(p.payment_date)), s.store_id
+order by concat('0',month(p.payment_date),'-',year(p.payment_date)) asc;
+```
+<img src="res/Q8.png" alt="description" width="50%">
+
+
+9. Trouvez le titre du film, le nom du client, le numéro de téléphone du client et l'adresse du client pour tous les DVD en circulation (qui n'ont pas prévu d'être rendus)
+```sql
+select distinct f.title, concat(c.first_name, ' ', c.last_name) as name, a.phone, concat(a.address, ' ', a.district, ' ', a.postal_code, ' ', ci.city, ' ', co.country) as address
+from sakila.rental r
+	join sakila.customer c 
+		on r.customer_id = c.customer_id
+	join sakila.address a
+		on a.address_id = c.address_id
+	join sakila.inventory i
+		on i.inventory_id = r.inventory_id
+	join sakila.film f
+		on f.film_id = i.film_id
+	join sakila.city ci 
+		on ci.city_id = a.city_id
+	join sakila.country co
+		on co.country_id = ci.country_id
+where r.return_date is null;
+```
+<img src="res/Q9.png" alt="description" width="50%">
+
+
+## 2è partie -- Test technique (type Entreprise)
+
 1. How can SQL queries be optimized ? 
 
 	12 best practices : 
@@ -166,6 +274,131 @@
 		- **Self-Referencing Relationships**: A table may relate to itself in a one-to-one or one-to-many manner. For example, an `Employees` table where each employee can have a manager who is also an employee.
 		
 		- **Foreign Keys**: Relationships are typically enforced using foreign keys, which are fields in one table that refer to the primary key of another table. This ensures referential integrity.
+
+
+8. SQL code example + Queries :
+
+	1. Give an example of the SQL code that will insert the ‘Input data’ into the two tables. You must ensure that the student table includes the correct [dbo].[Master].[id] in the [dbo].[student].[Master_id] column.
+
+		```sql
+		with new_master as (
+			insert into [dbo].[Master] (name, some_column)
+			values ('Example Name', 'Example Value')
+			output inserted.id
+		)
+		insert into [dbo].[student] (Master_id, student_name, student_column)
+		select id, 'Student Name', 'Student Value'
+		from new_master;
+
+		```
+
+	2. SQL code that shows courses’, subject names and the number of students taking the course only if the course has three or more students on the course.
+		```sql
+		select sub.*, count(stu.subject_id) as nb_stu_enrolled
+		from Q8_SDA.student stu
+			join Q8_SDA.subject sub
+				on stu.subject_id = sub.subject_id
+		group by stu.subject_id
+		order by stu.subject_id asc;
+		```
+		![](res/Q8-2.png)
+
+
+9. 2 parts :
+
+	**HYPOTHÈSE** : 
+	- Total = `Orders.total`
+	- Total *from the orders table* = Total amount spent *(by each customer from the orders table)* = `sum((OrderItems.price * OrderItems.quantity))`
+
+	1. Retrieve the order_id , customer_id, and total from the orders table where the **total** is greater than 400
+		```sql
+		select o.order_id, o.customer_id, sum((i.price * i.quantity)) as total_from_orders_table
+		from sda.orders o
+			join sda.order_items i 
+				on o.order_id = i.order_id
+		where o.total > 400
+		group by o.order_id;
+		```
+		<img src="res/Q9-1.png" alt="description" width="50%">
+
+	2. Retrieve the customer_id and the **total amount spent** by each customer from the orders table, ordered by the **total amount spent** in descending order
+
+		```sql
+		select o.customer_id, sum((i.price * i.quantity)) as total_from_orders_table
+		from sda.orders o
+			join sda.order_items i 
+				on o.order_id = i.order_id
+		group by o.order_id
+		order by o.total desc;
+		```
+		<img src="res/Q9-2.png" alt="description" width="50%">
+
+11. Write a query that shows the total quantity sold for each product.
+	```sql
+	select o.product_id, sum(o.quantity) as total_quantity_sold
+	from sda.order_items_v2 o
+	group by o.product_id;
+	```
+	<img src="res/Q10.png" alt="description" width="50%">
+
+
+12. Database creation + insertion
+	```sql
+	create table Customers 
+	(
+		id int, 
+		name varchar(100),
+		address varchar(100),
+		city varchar(100),
+		country varchar(100),
+		
+		constraint customer_pk primary key(id)
+	);
+
+	create table Orders
+	(
+		id int,
+		customer_id int,
+		order_date datetime,
+		total int,
+		
+		constraint orders_pk primary key(id),
+		constraint orders_cus_fk foreign key(customer_id)
+			references Customers on delete cascade
+	);
+
+	create table OrderDetails 
+	(
+		id int,
+		order_id int,
+		product varchar(100),
+		quantity int,
+		price float,
+		
+		constraint order_details_pk primary key(id),
+		constraint orders_fk foreign key(order_id)
+			references Orders on delete cascade
+	);
+
+
+
+	-- Insert unique customers into Customers table
+	insert into sda.Customers (id, name, address, city, country)
+	select distinct customer_id, customer_name, customer_addr, customer_city, customer_country
+	from sda.customer_orders;
+
+	-- Insert orders into Orders table
+	insert into Orders (id, customer_id, order_date, total)
+	select distinct order_id, customer_id, order_date, order_total
+	from sda.customer_orders
+	where order_id is not null;
+
+	-- Insert order details into OrderDetails table
+	insert into OrderDetails (id, order_id, product, quantity, price)
+	select distinct order_details_id, order_id, product, quantity, price
+	from sda.customer_orders
+	where order_id is not null;
+	```
 
 ## References
 1. ThoughtSpot. (n.d.). Optimizing SQL queries: A guide to data modeling best practices. ThoughtSpot. Retrieved November 1, 2024, from https://www.thoughtspot.com/data-trends/data-modeling/optimizing-sql-queries
